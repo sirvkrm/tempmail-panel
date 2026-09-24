@@ -35,23 +35,35 @@
             coollabs: '#8b5cf6'
           },
           fontFamily: {
-            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif],
-            mono: ['JetBrains Mono', 'SFMono-Regular', Consolas, Menlo, monospace]
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            display: ['"Space Grotesk"', '"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Fira Code"', '"JetBrains Mono"', 'SFMono-Regular', 'Consolas', 'monospace']
           }
         }
       }
     }
   </script>
 
+  <!-- Google Fonts: Plus Jakarta Sans, Space Grotesk, Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    
     body {
       background-color: #0e0e10;
       color: #f4f4f5;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      letter-spacing: -0.012em;
     }
-    code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+    h1, h2, h3, h4, .font-display {
+      font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+      letter-spacing: -0.025em;
+    }
+    code, pre, .font-mono {
+      font-family: 'Fira Code', monospace;
+      font-feature-settings: "liga" on, "calt" on;
+    }
     
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #0e0e10; }
@@ -550,116 +562,92 @@
             </div>
 
             <!-- SUBTAB: SWITCHBOARD LIST -->
-            <div x-show="projectSubTab === 'switchboard'" class="space-y-2 pt-1">
-              <!-- Switch Row 1: Core Mail -->
-              <div class="p-3.5 rounded-xl hairline-border bg-surface flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <i data-lucide="mail" class="size-4 text-warning"></i>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-xs font-semibold text-white">Core Mail Ingress</span>
-                      <span class="info-tip" title="Mailbox generation, inbox fetching, attachments, and deletion.">?</span>
-                      <span class="text-[10px] font-mono text-fg-faint px-1.5 py-0.2 rounded bg-white/[0.04]">Required</span>
-                    </div>
-                  </div>
+            <div x-show="projectSubTab === 'switchboard'" class="space-y-3 pt-1">
+              <!-- Toolbar -->
+              <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-fg-dim tracking-tight">Endpoint Routing & Switchboard</span>
+                  <span class="info-tip" title="Toggle individual API routes in real-time. Core endpoints guarantee client connectivity and cannot be disabled without affecting fundamental app flows.">?</span>
                 </div>
-                <label class="coolify-switch">
-                  <input type="checkbox" :checked="selectedProject.components.core_mail"
-                         @change="toggleProjectComponent(selectedProject.slug, 'core_mail', $event.target.checked)">
-                  <span class="coolify-slider"></span>
-                </label>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" @click="toggleAllCategories(true)" class="button !py-0.5 !px-2 text-[11px] font-mono text-fg-dim hover:text-white">Expand all</button>
+                  <button type="button" @click="toggleAllCategories(false)" class="button !py-0.5 !px-2 text-[11px] font-mono text-fg-dim hover:text-white">Collapse all</button>
+                </div>
               </div>
 
-              <!-- Switch Row 2: FCM Push -->
-              <div class="p-3.5 rounded-xl hairline-border bg-surface flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <i data-lucide="bell" class="size-4 text-emerald-400"></i>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-xs font-semibold text-white">FCM Push Notification Dispatch</span>
-                      <span class="info-tip" title="Dispatches real-time Google FCM HTTP v1 notifications on incoming emails.">?</span>
-                      <span class="text-[10px] font-mono text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-500/10">Port 4001</span>
+              <!-- Category Cards -->
+              <template x-for="cat in endpointCatalog" :key="cat.key">
+                <div class="rounded-xl hairline-border bg-surface overflow-hidden transition-all duration-150 shadow-sm">
+                  <!-- Category Header -->
+                  <div class="p-3 bg-panel/75 flex items-center justify-between cursor-pointer select-none hover:bg-white/[0.02] transition-colors"
+                       @click="expandedCategories[cat.key] = !expandedCategories[cat.key]; $nextTick(() => lucide.createIcons())">
+                    <div class="flex items-center gap-2.5">
+                      <div class="size-6 rounded-md bg-white/[0.04] flex items-center justify-center border border-white/[0.06]">
+                        <i :data-lucide="cat.icon" class="size-3.5" :class="cat.iconColor"></i>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold text-white tracking-tight" x-text="cat.name"></span>
+                        <span class="info-tip" :title="cat.description" @click.stop>!</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-mono border"
+                              :class="isCategoryActive(cat) ? (getCategoryActiveCount(cat) === cat.endpoints.length ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20') : 'bg-white/[0.04] text-fg-faint border-white/[0.06]'"
+                              x-text="isCategoryActive(cat) ? (getCategoryActiveCount(cat) + '/' + cat.endpoints.length + ' active') : 'DISABLED'">
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <label class="coolify-switch">
-                  <input type="checkbox" :checked="selectedProject.components.fcm_push"
-                         @change="toggleProjectComponent(selectedProject.slug, 'fcm_push', $event.target.checked)">
-                  <span class="coolify-slider"></span>
-                </label>
-              </div>
 
-              <!-- Switch Row 3: Play Integrity -->
-              <div class="p-3.5 rounded-xl hairline-border bg-surface flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <i data-lucide="shield" class="size-4 text-cyan-400"></i>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-xs font-semibold text-white">Google Play Integrity Attestation</span>
-                      <span class="info-tip" title="Validates genuine Android device verdicts before granting mobile bootstrap tokens.">?</span>
+                    <div class="flex items-center gap-3">
+                      <label class="coolify-switch" @click.stop>
+                        <input type="checkbox" :checked="isCategoryActive(cat)"
+                               @change="toggleCategory(cat, $event.target.checked)">
+                        <span class="coolify-slider"></span>
+                      </label>
+                      <i data-lucide="chevron-down" class="size-4 text-fg-faint transition-transform duration-200"
+                         :class="expandedCategories[cat.key] ? 'rotate-180 text-white' : ''"></i>
                     </div>
                   </div>
-                </div>
-                <label class="coolify-switch">
-                  <input type="checkbox" :checked="selectedProject.components.play_integrity"
-                         @change="toggleProjectComponent(selectedProject.slug, 'play_integrity', $event.target.checked)">
-                  <span class="coolify-slider"></span>
-                </label>
-              </div>
 
-              <!-- Switch Row 4: POW Challenge -->
-              <div class="p-3.5 rounded-xl hairline-border bg-surface flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <i data-lucide="cpu" class="size-4 text-purple-400"></i>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-xs font-semibold text-white">Proof-of-Work Browser Challenge</span>
-                      <span class="info-tip" title="Enforces SHA-256 cryptographic challenge solve under elevated request volume.">?</span>
-                    </div>
-                  </div>
-                </div>
-                <label class="coolify-switch">
-                  <input type="checkbox" :checked="selectedProject.components.pow_challenge"
-                         @change="toggleProjectComponent(selectedProject.slug, 'pow_challenge', $event.target.checked)">
-                  <span class="coolify-slider"></span>
-                </label>
-              </div>
+                  <!-- Granular Endpoints List -->
+                  <div x-show="expandedCategories[cat.key]" class="border-t border-white/[0.05] divide-y divide-white/[0.03]">
+                    <template x-for="ep in cat.endpoints" :key="ep.id">
+                      <div class="px-4 py-2.5 flex items-center justify-between hover:bg-white/[0.015] transition-colors"
+                           :class="!isCategoryActive(cat) ? 'opacity-40 pointer-events-none' : ''">
+                        <div class="flex items-center gap-2.5">
+                          <!-- Method Badge -->
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider"
+                                :class="{
+                                  'bg-amber-500/15 text-amber-400 border border-amber-500/20': ep.method === 'POST',
+                                  'bg-sky-500/15 text-sky-400 border border-sky-500/20': ep.method === 'GET',
+                                  'bg-rose-500/15 text-rose-400 border border-rose-500/20': ep.method === 'DELETE'
+                                }"
+                                x-text="ep.method">
+                          </span>
 
-              <!-- Switch Row 5: VIP Ad Rewards -->
-              <div class="p-3.5 rounded-xl hairline-border bg-surface flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <i data-lucide="gift" class="size-4 text-amber-400"></i>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-xs font-semibold text-white">AdMob VIP Rewarded Mailboxes</span>
-                      <span class="info-tip" title="Allows granting temporary active inbox limit increases upon ad view completion.">?</span>
-                    </div>
-                  </div>
-                </div>
-                <label class="coolify-switch">
-                  <input type="checkbox" :checked="selectedProject.components.vip_ad_rewards"
-                         @change="toggleProjectComponent(selectedProject.slug, 'vip_ad_rewards', $event.target.checked)">
-                  <span class="coolify-slider"></span>
-                </label>
-              </div>
+                          <!-- Path -->
+                          <span class="font-mono text-xs text-white/90" x-text="ep.path"></span>
 
-              <!-- Switch Row 6: Custom Prefixes -->
-              <div class="p-3.5 rounded-xl hairline-border bg-surface flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <i data-lucide="tag" class="size-4 text-blue-400"></i>
-                  <div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-xs font-semibold text-white">Custom Mailbox Prefix Allocator</span>
-                      <span class="info-tip" title="Enables user-chosen vanity mailbox names (e.g. user123@...).">?</span>
-                    </div>
+                          <!-- Core Badge -->
+                          <template x-if="ep.is_core">
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)] flex items-center gap-1">
+                              <span class="size-1 rounded-full bg-amber-400 animate-pulse"></span>
+                              CORE
+                            </span>
+                          </template>
+
+                          <!-- Inline '?' tooltip -->
+                          <span class="info-tip" :title="ep.desc">?</span>
+                        </div>
+
+                        <!-- Endpoint Toggle -->
+                        <label class="coolify-switch">
+                          <input type="checkbox" :checked="isEndpointActive(cat, ep.id)"
+                                 @change="toggleEndpoint(cat, ep, $event.target.checked)">
+                          <span class="coolify-slider"></span>
+                        </label>
+                      </div>
+                    </template>
                   </div>
                 </div>
-                <label class="coolify-switch">
-                  <input type="checkbox" :checked="selectedProject.components.custom_prefixes"
-                         @change="toggleProjectComponent(selectedProject.slug, 'custom_prefixes', $event.target.checked)">
-                  <span class="coolify-slider"></span>
-                </label>
-              </div>
+              </template>
             </div>
 
             <!-- SUBTAB: ASSIGNED DOMAINS -->
@@ -985,6 +973,109 @@
           { id: 'd7', domain: 'fastinbox.org' }
         ],
 
+        expandedCategories: {
+          core_mail: true,
+          session_mgmt: true,
+          pow_challenge: true,
+          play_integrity: true,
+          fcm_push: true,
+          vip_ad_rewards: true,
+          custom_prefixes: true
+        },
+
+        endpointCatalog: [
+          {
+            key: 'core_mail',
+            name: 'Core Mail Engine',
+            icon: 'mail',
+            iconColor: 'text-amber-400',
+            description: 'Core mailbox lifecycle, message fetching, attachments, and deletion.',
+            endpoints: [
+              { id: 'post_inboxes', method: 'POST', path: '/api/inboxes', is_core: true, desc: 'Generates new disposable mailboxes.' },
+              { id: 'get_inboxes_id', method: 'GET', path: '/api/inboxes/{id}', is_core: true, desc: 'Fetches mailbox status and expiration timestamp.' },
+              { id: 'get_messages', method: 'GET', path: '/api/inboxes/{id}/messages', is_core: true, desc: 'Lists received messages in the mailbox.' },
+              { id: 'get_message_id', method: 'GET', path: '/api/inboxes/{id}/messages/{id}', is_core: true, desc: 'Fetches full sanitized email body & headers.' },
+              { id: 'get_attachment', method: 'GET', path: '/api/inboxes/{id}/messages/{id}/attachments/{id}', is_core: false, desc: 'Downloads MIME file attachments.' },
+              { id: 'del_inboxes_id', method: 'DELETE', path: '/api/inboxes/{id}', is_core: false, desc: 'Destroys mailbox and flushes cache.' },
+              { id: 'post_inboxes_renew', method: 'POST', path: '/api/inboxes/{id}/renew', is_core: false, desc: 'Extends mailbox lease and retention window.' }
+            ]
+          },
+          {
+            key: 'session_mgmt',
+            parentKey: 'core_mail',
+            name: 'Identity & Session Token Security',
+            icon: 'key',
+            iconColor: 'text-emerald-400',
+            description: 'Mobile installation tokens, session encryption, and multi-device OTP transfer.',
+            endpoints: [
+              { id: 'post_mobile_bootstrap', method: 'POST', path: '/api/mobile/bootstrap', is_core: true, desc: 'Bootstraps client session with install-bound token.' },
+              { id: 'post_mobile_sync_otp', method: 'POST', path: '/api/mobile/sync/otp', is_core: false, desc: 'Generates temporary 6-digit sync OTP for device transfer.' },
+              { id: 'post_mobile_sync_claim', method: 'POST', path: '/api/mobile/sync/claim', is_core: false, desc: 'Claims device sync OTP to transfer mailboxes.' },
+              { id: 'del_mobile_session', method: 'DELETE', path: '/api/mobile/session', is_core: false, desc: 'Terminates active session token and clears auth state.' }
+            ]
+          },
+          {
+            key: 'pow_challenge',
+            parentKey: 'pow_challenge',
+            name: 'Cryptographic POW Shield',
+            icon: 'cpu',
+            iconColor: 'text-purple-400',
+            description: 'Adaptive anti-DDoS Proof-of-Work challenge verification.',
+            endpoints: [
+              { id: 'post_challenge', method: 'POST', path: '/api/challenge', is_core: true, desc: 'Issues cryptographic SHA-256 challenge puzzle under pressure.' },
+              { id: 'post_challenge_solve', method: 'POST', path: '/api/challenge/solve', is_core: true, desc: 'Validates nonce answer and returns clearance token.' },
+              { id: 'get_challenge_browser', method: 'GET', path: '/api/challenge/browser', is_core: false, desc: 'Interactive browser challenge fallback page.' }
+            ]
+          },
+          {
+            key: 'play_integrity',
+            parentKey: 'play_integrity',
+            name: 'Google Play Integrity Attestation',
+            icon: 'shield-check',
+            iconColor: 'text-cyan-400',
+            description: 'Hardware-backed Android device integrity verdicts.',
+            endpoints: [
+              { id: 'post_integrity_attest', method: 'POST', path: '/api/mobile/integrity/attest', is_core: true, desc: 'Validates Google Play Integrity attestation token.' }
+            ]
+          },
+          {
+            key: 'fcm_push',
+            parentKey: 'fcm_push',
+            name: 'FCM Push Notification Dispatch',
+            icon: 'bell',
+            iconColor: 'text-emerald-400',
+            description: 'Google FCM HTTP v1 real-time notification push to mobile apps.',
+            endpoints: [
+              { id: 'post_fcm_register', method: 'POST', path: '/api/mobile/fcm/register', is_core: true, desc: 'Registers device FCM push notification token.' },
+              { id: 'del_fcm_unregister', method: 'DELETE', path: '/api/mobile/fcm/unregister', is_core: false, desc: 'Unregisters and deletes device FCM token.' },
+              { id: 'post_fcm_test', method: 'POST', path: '/api/mobile/fcm/test', is_core: false, desc: 'Sends immediate diagnostic test push notification.' }
+            ]
+          },
+          {
+            key: 'vip_ad_rewards',
+            parentKey: 'vip_ad_rewards',
+            name: 'AdMob VIP Rewarded Mailboxes',
+            icon: 'gift',
+            iconColor: 'text-amber-400',
+            description: 'Temporary active inbox expansion upon rewarded ad completion.',
+            endpoints: [
+              { id: 'post_admob_claim', method: 'POST', path: '/api/rewards/admob/claim', is_core: true, desc: 'Validates Google AdMob SSV cryptographic reward callback.' }
+            ]
+          },
+          {
+            key: 'custom_prefixes',
+            parentKey: 'custom_prefixes',
+            name: 'Custom Vanity Handle Allocator',
+            icon: 'tag',
+            iconColor: 'text-blue-400',
+            description: 'Custom email prefix validation and temporary reservations.',
+            endpoints: [
+              { id: 'post_prefix_preview', method: 'POST', path: '/api/inboxes/preview', is_core: false, desc: 'Checks availability and reserves custom vanity email prefix.' },
+              { id: 'del_prefix_release', method: 'DELETE', path: '/api/inboxes/preview/{token}', is_core: false, desc: 'Releases vanity prefix reservation token.' }
+            ]
+          }
+        ],
+
         get filteredProjects() {
           if (!this.searchQuery) return this.projects;
           const q = this.searchQuery.toLowerCase();
@@ -1064,6 +1155,81 @@
                 this.domains = data;
               }
             }
+          } catch (e) {}
+        },
+
+        isCategoryActive(cat) {
+          if (!this.selectedProject || !this.selectedProject.components) return false;
+          const k = cat.parentKey || cat.key;
+          return !!this.selectedProject.components[k];
+        },
+
+        getCategoryActiveCount(cat) {
+          if (!this.isCategoryActive(cat)) return 0;
+          return cat.endpoints.filter(ep => this.isEndpointActive(cat, ep.id)).length;
+        },
+
+        isEndpointActive(cat, epId) {
+          if (!this.selectedProject || !this.selectedProject.components) return false;
+          if (!this.isCategoryActive(cat)) return false;
+          const overrides = this.selectedProject.components.endpoint_overrides || {};
+          if (overrides[epId] !== undefined) {
+            return overrides[epId];
+          }
+          return true;
+        },
+
+        async toggleCategory(cat, isChecked) {
+          if (!this.selectedProject) return;
+          if (!this.selectedProject.components) this.selectedProject.components = {};
+          const k = cat.parentKey || cat.key;
+          this.selectedProject.components[k] = isChecked;
+
+          showToast(`${cat.name} ${isChecked ? 'enabled' : 'disabled'}`, 'info');
+          await this.saveProjectComponents(this.selectedProject.slug);
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        async toggleEndpoint(cat, ep, isChecked) {
+          if (!this.selectedProject) return;
+          if (!this.selectedProject.components) this.selectedProject.components = {};
+          if (!this.selectedProject.components.endpoint_overrides) {
+            this.selectedProject.components.endpoint_overrides = {};
+          }
+          this.selectedProject.components.endpoint_overrides[ep.id] = isChecked;
+
+          // If turning an endpoint on while category is off, auto-enable category
+          const parentK = cat.parentKey || cat.key;
+          if (isChecked && !this.selectedProject.components[parentK]) {
+            this.selectedProject.components[parentK] = true;
+          }
+
+          if (ep.is_core && !isChecked) {
+            showToast(`⚠️ Warning: CORE endpoint ${ep.method} ${ep.path} disabled`, 'warning');
+          } else {
+            showToast(`${ep.method} ${ep.path} ${isChecked ? 'enabled' : 'disabled'}`, 'success');
+          }
+
+          await this.saveProjectComponents(this.selectedProject.slug);
+        },
+
+        toggleAllCategories(expand) {
+          for (let cat of this.endpointCatalog) {
+            this.expandedCategories[cat.key] = expand;
+          }
+          this.$nextTick(() => lucide.createIcons());
+        },
+
+        async saveProjectComponents(projectSlug) {
+          const proj = this.projects.find(p => p.slug === projectSlug);
+          if (!proj) return;
+          try {
+            await fetch(`/hub-api/api/admin/vkrm-mobile/projects/${projectSlug}/components`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ components: proj.components })
+            });
           } catch (e) {}
         },
 
