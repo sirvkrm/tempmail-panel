@@ -274,14 +274,14 @@
             <h2 class="text-xl font-bold text-white tracking-tight">Project Component Switchboard</h2>
             <p class="text-xs text-gray-400 mt-1">Configure which endpoints and features are active per client project without affecting core engine availability.</p>
           </div>
-          <button class="px-3 py-1.5 rounded bg-accent text-black font-semibold text-xs flex items-center gap-1.5 hover:bg-accent/90 transition">
+          <button onclick="openNewProjectModal()" class="px-3 py-1.5 rounded bg-accent text-black font-semibold text-xs flex items-center gap-1.5 hover:bg-accent/90 transition">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
             <span>Add New Client Project</span>
           </button>
         </div>
 
         <!-- Projects Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           <!-- Project 1: Mobile App -->
           <div class="p-4 rounded-xl hairline-border bg-surface hover:border-white/20 transition space-y-4">
@@ -449,6 +449,60 @@
       </div>
     </div>
   </div>
+
+  <!-- Create New Project Modal -->
+  <div id="new-project-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-surface hairline-border rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-xs font-bold">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-semibold text-white text-sm">Add Client Project</h3>
+        </div>
+        <button onclick="closeNewProjectModal()" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-400 mb-1">Project Name</label>
+          <input id="new-project-name" type="text" placeholder="e.g. Desktop Electron App" class="w-full bg-black/40 hairline-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1">Project Slug (URL safe identifier)</label>
+          <input id="new-project-slug" type="text" placeholder="e.g. desktop-app" class="w-full bg-black/40 hairline-border rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-accent">
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1">Description</label>
+          <input id="new-project-desc" type="text" placeholder="Client purpose, target platforms..." class="w-full bg-black/40 hairline-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accent">
+        </div>
+        <div class="pt-2 border-t border-white/[0.06] space-y-2">
+          <label class="block text-gray-400 font-medium">Default Component Activations:</label>
+          <div class="grid grid-cols-2 gap-2 text-gray-300">
+            <label class="flex items-center gap-2"><input id="comp-core-mail" type="checkbox" checked class="accent-amber-500"> Core Mail</label>
+            <label class="flex items-center gap-2"><input id="comp-fcm-push" type="checkbox" class="accent-amber-500"> FCM Push</label>
+            <label class="flex items-center gap-2"><input id="comp-play-integrity" type="checkbox" class="accent-amber-500"> Play Integrity</label>
+            <label class="flex items-center gap-2"><input id="comp-pow" type="checkbox" checked class="accent-amber-500"> POW Challenge</label>
+            <label class="flex items-center gap-2"><input id="comp-vip-ads" type="checkbox" class="accent-amber-500"> VIP Ad Rewards</label>
+            <label class="flex items-center gap-2"><input id="comp-custom-prefix" type="checkbox" class="accent-amber-500"> Custom Prefixes</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/[0.08]">
+        <button onclick="closeNewProjectModal()" class="px-3 py-1.5 rounded hairline-border text-gray-400 hover:text-white text-xs">Cancel</button>
+        <button onclick="submitNewProject()" class="px-4 py-1.5 rounded bg-accent text-black font-semibold text-xs hover:bg-accent/90 transition flex items-center gap-1.5">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>Create Project</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Three.js 3D Ecosystem Simulation Script -->
   <script>
@@ -680,23 +734,71 @@
       document.getElementById('inspector-type').innerText = data.type + ' • ' + data.status;
       document.getElementById('inspector-badge').innerText = data.name.charAt(0);
 
-      let detailsHtml = `
-        <div class="flex justify-between py-1 border-b border-white/[0.04]">
-          <span class="text-gray-400">Node Identifier:</span>
-          <span class="font-mono text-white">${data.id}</span>
-        </div>
-        <div class="flex justify-between py-1 border-b border-white/[0.04]">
-          <span class="text-gray-400">Runtime Health:</span>
-          <span class="text-emerald-400 font-semibold font-mono">100% Operational</span>
-        </div>
-        <div class="flex justify-between py-1 border-b border-white/[0.04]">
-          <span class="text-gray-400">Active Handlers:</span>
-          <span class="text-white font-mono">Core Dispatcher</span>
-        </div>
-        <p class="text-gray-400 pt-1">
-          Connected through MailMesh dual-write pipeline. Can be hot-swapped or upgraded without service interruption.
-        </p>
-      `;
+      // Check if clicked node is a project
+      const matchedProject = (data.id === 'proj_mobile') ? getProjectBySlug('mobile')
+                           : (data.id === 'proj_web') ? getProjectBySlug('web')
+                           : (data.id === 'proj_bot') ? getProjectBySlug('bot')
+                           : null;
+
+      let detailsHtml = '';
+      if (matchedProject) {
+        const comps = matchedProject.components || {};
+        detailsHtml = `
+          <div class="flex justify-between py-1 border-b border-white/[0.04]">
+            <span class="text-gray-400">Project Slug:</span>
+            <span class="font-mono text-white">${matchedProject.slug}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-white/[0.04]">
+            <span class="text-gray-400">Assigned Domains:</span>
+            <span class="text-accent font-semibold font-mono">${(matchedProject.assigned_domain_ids || []).length} Pool Domains</span>
+          </div>
+          <div class="pt-2 text-gray-300 space-y-1.5">
+            <span class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Live Component Switchboard:</span>
+            <label class="flex items-center justify-between text-xs py-0.5">
+              <span>Core Mail Engine</span>
+              <input type="checkbox" ${comps.core_mail ? 'checked' : ''} onchange="toggleComponent('${matchedProject.slug}', 'core_mail', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs py-0.5">
+              <span>FCM Push Dispatch</span>
+              <input type="checkbox" ${comps.fcm_push ? 'checked' : ''} onchange="toggleComponent('${matchedProject.slug}', 'fcm_push', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs py-0.5">
+              <span>Play Integrity Shield</span>
+              <input type="checkbox" ${comps.play_integrity ? 'checked' : ''} onchange="toggleComponent('${matchedProject.slug}', 'play_integrity', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs py-0.5">
+              <span>POW Anti-Abuse Challenge</span>
+              <input type="checkbox" ${comps.pow_challenge ? 'checked' : ''} onchange="toggleComponent('${matchedProject.slug}', 'pow_challenge', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs py-0.5">
+              <span>VIP Ad Free Rewards</span>
+              <input type="checkbox" ${comps.vip_ad_rewards ? 'checked' : ''} onchange="toggleComponent('${matchedProject.slug}', 'vip_ad_rewards', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs py-0.5">
+              <span>Custom Prefixes</span>
+              <input type="checkbox" ${comps.custom_prefixes ? 'checked' : ''} onchange="toggleComponent('${matchedProject.slug}', 'custom_prefixes', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+            </label>
+          </div>
+        `;
+      } else {
+        detailsHtml = `
+          <div class="flex justify-between py-1 border-b border-white/[0.04]">
+            <span class="text-gray-400">Node Identifier:</span>
+            <span class="font-mono text-white">${data.id}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-white/[0.04]">
+            <span class="text-gray-400">Runtime Health:</span>
+            <span class="text-emerald-400 font-semibold font-mono">100% Operational</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-white/[0.04]">
+            <span class="text-gray-400">Active Handlers:</span>
+            <span class="text-white font-mono">Core Dispatcher</span>
+          </div>
+          <p class="text-gray-400 pt-1">
+            Connected through MailMesh dual-write pipeline. Can be hot-swapped or upgraded without service interruption.
+          </p>
+        `;
+      }
 
       document.getElementById('inspector-content').innerHTML = detailsHtml;
       inspector.classList.remove('hidden');
@@ -731,7 +833,7 @@
       if (!activeLockedNode) return;
       const notes = document.getElementById('modal-node-notes').value;
       localStorage.setItem('tech_note_' + activeLockedNode.id, notes);
-      alert('Blueprint saved for ' + activeLockedNode.name + '! AGY agent can now read and implement this module.');
+      showToast('Blueprint saved for ' + activeLockedNode.name + '!', 'success');
       closeRoadmapModal();
     }
 
@@ -741,6 +843,15 @@
       if (node) {
         openNodeDetail(node);
       }
+    }
+
+    // Modal Add Project Controls
+    function openNewProjectModal() {
+      document.getElementById('new-project-modal').classList.remove('hidden');
+    }
+
+    function closeNewProjectModal() {
+      document.getElementById('new-project-modal').classList.add('hidden');
     }
 
     // Animation Loop
@@ -767,6 +878,196 @@
     }
     animate();
 
+    // ==========================================
+    // Live Backend Project State & API Sync
+    // ==========================================
+    let liveProjects = [
+      {
+        slug: 'mobile',
+        name: 'Mobile App (Flutter)',
+        description: 'Android & iOS client consuming mail.dormammu.org with AdMob VIP and push delivery.',
+        components: { core_mail: true, fcm_push: true, play_integrity: true, pow_challenge: true, vip_ad_rewards: true, custom_prefixes: false },
+        assigned_domain_ids: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6']
+      },
+      {
+        slug: 'web',
+        name: 'Web Client (Browser)',
+        description: 'lun.vkrm.site/tempmail web interface with instant mailbox generator.',
+        components: { core_mail: true, fcm_push: false, play_integrity: false, pow_challenge: true, vip_ad_rewards: false, custom_prefixes: true },
+        assigned_domain_ids: ['d1', 'd2', 'd3']
+      }
+    ];
+
+    function getProjectBySlug(slug) {
+      return liveProjects.find(p => p.slug === slug);
+    }
+
+    async function loadProjects() {
+      try {
+        const res = await fetch('/hub-api/api/admin/vkrm-mobile/projects', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            liveProjects = data;
+            renderProjects();
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch backend projects, using local cache:', e);
+      }
+    }
+
+    function renderProjects() {
+      const container = document.getElementById('projects-grid');
+      if (!container) return;
+      
+      container.innerHTML = liveProjects.map(p => {
+        const comps = p.components || {};
+        const domainCount = (p.assigned_domain_ids || []).length;
+        const iconName = p.slug.includes('mob') ? 'smartphone' : (p.slug.includes('web') ? 'globe' : 'bot');
+        const badgeColor = p.slug.includes('mob') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-cyan-500/10 text-cyan-400';
+        const badgeLabel = p.slug.includes('mob') ? 'PRODUCTION' : 'CLIENT';
+
+        return `
+          <div class="p-4 rounded-xl hairline-border bg-surface hover:border-white/20 transition space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="${iconName}" class="w-5 h-5 text-accent"></i>
+                <h3 class="font-semibold text-white text-sm">${p.name}</h3>
+              </div>
+              <span class="px-2 py-0.5 rounded ${badgeColor} font-mono text-[10px]">${badgeLabel}</span>
+            </div>
+            <p class="text-xs text-gray-400">${p.description || 'Dedicated client API profile.'}</p>
+
+            <div class="space-y-2 pt-2 border-t border-white/[0.06] text-xs">
+              <div class="flex items-center justify-between py-1">
+                <span class="text-gray-300">Core Mail Ingress</span>
+                <input type="checkbox" ${comps.core_mail ? 'checked' : ''} onchange="toggleComponent('${p.slug}', 'core_mail', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+              </div>
+              <div class="flex items-center justify-between py-1">
+                <span class="text-gray-300">FCM Push Notification Dispatch</span>
+                <input type="checkbox" ${comps.fcm_push ? 'checked' : ''} onchange="toggleComponent('${p.slug}', 'fcm_push', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+              </div>
+              <div class="flex items-center justify-between py-1">
+                <span class="text-gray-300">Play Integrity Verification</span>
+                <input type="checkbox" ${comps.play_integrity ? 'checked' : ''} onchange="toggleComponent('${p.slug}', 'play_integrity', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+              </div>
+              <div class="flex items-center justify-between py-1">
+                <span class="text-gray-300">POW Browser Challenge</span>
+                <input type="checkbox" ${comps.pow_challenge ? 'checked' : ''} onchange="toggleComponent('${p.slug}', 'pow_challenge', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+              </div>
+              <div class="flex items-center justify-between py-1">
+                <span class="text-gray-300">VIP Ad Reward Grant</span>
+                <input type="checkbox" ${comps.vip_ad_rewards ? 'checked' : ''} onchange="toggleComponent('${p.slug}', 'vip_ad_rewards', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+              </div>
+              <div class="flex items-center justify-between py-1">
+                <span class="text-gray-300">Custom Mailbox Prefixes</span>
+                <input type="checkbox" ${comps.custom_prefixes ? 'checked' : ''} onchange="toggleComponent('${p.slug}', 'custom_prefixes', this.checked)" class="accent-amber-500 rounded cursor-pointer">
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-between items-center text-[11px] text-gray-500 border-t border-white/[0.06]">
+              <span>Active Domains: ${domainCount}</span>
+              <a href="javascript:void(0)" onclick="focusTechNode('proj_${p.slug}')" class="text-accent hover:underline">View in 3D →</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    async function toggleComponent(projectSlug, componentKey, isChecked) {
+      const proj = getProjectBySlug(projectSlug);
+      if (!proj) return;
+      if (!proj.components) proj.components = {};
+      proj.components[componentKey] = isChecked;
+
+      try {
+        const res = await fetch(`/hub-api/api/admin/vkrm-mobile/projects/${projectSlug}/components`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ components: proj.components })
+        });
+        if (res.ok) {
+          showToast(`Project [${projectSlug}] component [${componentKey}] updated to ${isChecked}!`, 'success');
+        } else {
+          showToast(`Component toggle updated locally (session authentication required on server).`, 'info');
+        }
+      } catch (err) {
+        showToast(`Component toggle saved in memory.`, 'info');
+      }
+      renderProjects();
+    }
+
+    async function submitNewProject() {
+      const name = document.getElementById('new-project-name').value.trim();
+      const slug = document.getElementById('new-project-slug').value.trim().toLowerCase();
+      const desc = document.getElementById('new-project-desc').value.trim();
+
+      if (!name || !slug) {
+        showToast('Please provide both Project Name and Slug.', 'error');
+        return;
+      }
+
+      const components = {
+        core_mail: document.getElementById('comp-core-mail').checked,
+        fcm_push: document.getElementById('comp-fcm-push').checked,
+        play_integrity: document.getElementById('comp-play-integrity').checked,
+        pow_challenge: document.getElementById('comp-pow').checked,
+        vip_ad_rewards: document.getElementById('comp-vip-ads').checked,
+        custom_prefixes: document.getElementById('comp-custom-prefix').checked
+      };
+
+      try {
+        const res = await fetch('/hub-api/api/admin/vkrm-mobile/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ slug, name, description: desc || null, components })
+        });
+        if (res.ok) {
+          const created = await res.json();
+          liveProjects.push(created);
+          showToast(`Project [${name}] created successfully!`, 'success');
+        } else {
+          // Add locally
+          liveProjects.push({ slug, name, description: desc, components, assigned_domain_ids: [] });
+          showToast(`Project [${name}] created locally!`, 'success');
+        }
+      } catch (e) {
+        liveProjects.push({ slug, name, description: desc, components, assigned_domain_ids: [] });
+        showToast(`Project [${name}] created locally!`, 'success');
+      }
+
+      closeNewProjectModal();
+      renderProjects();
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      const colors = type === 'success' ? 'bg-emerald-950/90 text-emerald-300 border-emerald-700/50'
+                   : type === 'error' ? 'bg-rose-950/90 text-rose-300 border-rose-700/50'
+                   : 'bg-surface/90 text-amber-300 border-amber-600/50';
+
+      toast.className = `px-4 py-2.5 rounded-lg hairline-border text-xs shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center gap-2 ${colors}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
     // Live Metrics Poller
     async function pollLiveMetrics() {
       try {
@@ -782,6 +1083,7 @@
     }
     setInterval(pollLiveMetrics, 5000);
     pollLiveMetrics();
+    loadProjects();
 
   </script>
 </body>
