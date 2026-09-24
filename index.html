@@ -806,22 +806,95 @@
 
       <!-- ================= 6. 3D ECOSYSTEM VIEW ================= -->
       <section x-show="activeView === 'ecosystem'" class="w-full h-full relative" style="height: calc(100vh - 3rem);">
-        <canvas id="ecosystem-canvas" class="w-full h-full outline-none"></canvas>
+        <canvas id="ecosystem-canvas" class="w-full h-full outline-none block"></canvas>
 
-        <!-- Minimal HUD Box -->
-        <div class="absolute top-4 left-4 z-10 bg-panel/90 backdrop-blur p-3 rounded-xl hairline-border text-xs space-y-2 max-w-xs shadow-xl">
-          <div class="flex items-center justify-between">
-            <span class="font-semibold text-white flex items-center gap-1.5">
-              <i data-lucide="network" class="size-3.5 text-cyan-400"></i>
-              <span>3D Architecture</span>
+        <!-- TOP LEFT: Live Health & Telemetry HUD -->
+        <div class="absolute top-4 left-4 z-10 bg-panel/90 backdrop-blur-md p-3.5 rounded-xl hairline-border text-xs space-y-2.5 max-w-xs shadow-2xl pointer-events-auto">
+          <div class="flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+            <span class="font-semibold text-white flex items-center gap-1.5 font-display text-[13px]">
+              <i data-lucide="zap" class="size-4 text-cyan-400"></i>
+              <span>Live Electric Topology</span>
             </span>
-            <span class="info-tip" title="Interactive WebGL topology. Click nodes to inspect.">?</span>
+            <span class="info-tip" title="Hierarchical 3D status visualizer. Scroll to zoom into node internals and inspect micro electrical circuits.">?</span>
           </div>
-          <div class="grid grid-cols-2 gap-1 text-[11px] font-mono">
+
+          <div class="space-y-1.5 font-mono text-[11px]">
+            <div class="flex items-center justify-between">
+              <span class="text-fg-faint">System Health:</span>
+              <span id="hud-system-status" class="text-emerald-400 font-bold flex items-center gap-1">
+                <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>OPERATIONAL</span>
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-fg-faint">LOD Detail:</span>
+              <span id="hud-zoom-lod" class="text-cyan-400 font-semibold">Macro Overview</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-fg-faint">Inter-Node Latency:</span>
+              <span id="hud-avg-latency" class="text-white font-semibold">~0.7 ms</span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-white/[0.06] grid grid-cols-2 gap-1 text-[10px] font-mono">
             <div class="flex items-center gap-1.5 text-emerald-400"><span class="size-1.5 rounded-full bg-emerald-400"></span> Live Running</div>
-            <div class="flex items-center gap-1.5 text-cyan-400"><span class="size-1.5 rounded-full bg-cyan-400"></span> Ingress / WAF</div>
-            <div class="flex items-center gap-1.5 text-warning"><span class="size-1.5 rounded-full bg-warning"></span> Projects</div>
-            <div class="flex items-center gap-1.5 text-fg-faint"><span class="size-1.5 rounded-full bg-gray-500"></span> 🔒 Locked Tech</div>
+            <div class="flex items-center gap-1.5 text-cyan-400"><span class="size-1.5 rounded-full bg-cyan-400"></span> Electric Ingress</div>
+            <div class="flex items-center gap-1.5 text-warning"><span class="size-1.5 rounded-full bg-warning"></span> Client API</div>
+            <div class="flex items-center gap-1.5 text-rose-400"><span class="size-1.5 rounded-full bg-rose-400"></span> Fault / Degraded</div>
+          </div>
+        </div>
+
+        <!-- TOP RIGHT: Quick Camera Focus & Failure Simulator -->
+        <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-auto items-end">
+          <div class="bg-panel/90 backdrop-blur-md p-1.5 rounded-xl hairline-border flex items-center gap-1 shadow-2xl">
+            <button type="button" onclick="window.focusVisualizerNode('overview')" class="button !py-1 !px-2.5 text-[11px] font-mono text-fg-dim hover:text-white" title="Reset to global cluster overview">
+              <i data-lucide="eye" class="size-3 text-cyan-400"></i>
+              <span>Overview</span>
+            </button>
+            <button type="button" onclick="window.focusVisualizerNode('hub')" class="button !py-1 !px-2 text-[11px] font-mono text-fg-dim hover:text-white" title="Zoom into MailMesh Hub internals">
+              <span>Hub API</span>
+            </button>
+            <button type="button" onclick="window.focusVisualizerNode('ingest')" class="button !py-1 !px-2 text-[11px] font-mono text-fg-dim hover:text-white" title="Zoom into SMTP Ingest internals">
+              <span>Ingest</span>
+            </button>
+            <button type="button" onclick="window.focusVisualizerNode('redis')" class="button !py-1 !px-2 text-[11px] font-mono text-fg-dim hover:text-white" title="Zoom into Redis internals">
+              <span>Redis</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.triggerElectricBurst()" class="button button-highlighted !py-1 text-xs shadow-lg">
+              <i data-lucide="zap" class="size-3.5"></i>
+              <span>Pulse Burst</span>
+            </button>
+            <button type="button" id="btn-toggle-failure" onclick="window.toggleSimulatedFailure()" class="button !border-rose-500/40 !text-rose-400 hover:!bg-rose-500/10 !py-1 text-xs shadow-lg">
+              <i data-lucide="alert-triangle" class="size-3.5"></i>
+              <span>Simulate Failure</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTTOM RIGHT: Node Inspector Drawer -->
+        <div id="visualizer-inspector" class="absolute bottom-4 right-4 z-10 bg-panel/95 backdrop-blur-md p-3.5 rounded-xl hairline-border text-xs max-w-sm w-80 shadow-2xl pointer-events-auto hidden space-y-2">
+          <div class="flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+            <div class="flex items-center gap-2">
+              <span id="inspector-icon-dot" class="size-2 rounded-full bg-emerald-400"></span>
+              <span id="inspector-title" class="font-semibold text-white font-display text-[13px]">Node Details</span>
+            </div>
+            <button onclick="document.getElementById('visualizer-inspector').classList.add('hidden')" class="text-fg-faint hover:text-white p-0.5">
+              <i data-lucide="x" class="size-3.5"></i>
+            </button>
+          </div>
+          <div class="space-y-1 font-mono text-[11px]">
+            <div class="flex justify-between"><span class="text-fg-faint">Component:</span><span id="inspector-name" class="text-white"></span></div>
+            <div class="flex justify-between"><span class="text-fg-faint">Address / Port:</span><span id="inspector-port" class="text-cyan-400"></span></div>
+            <div class="flex justify-between"><span class="text-fg-faint">Working Status:</span><span id="inspector-status" class="text-emerald-400 font-bold"></span></div>
+            <div class="flex justify-between"><span class="text-fg-faint">Live Latency:</span><span id="inspector-latency" class="text-amber-400"></span></div>
+            <div class="flex justify-between"><span class="text-fg-faint">Connection Health:</span><span id="inspector-health" class="text-white">100% OK (0 Drops)</span></div>
+          </div>
+          <div id="inspector-internals-box" class="pt-2 border-t border-white/[0.06] text-[10px] text-fg-dim">
+            <span class="text-fg-faint font-mono uppercase block mb-1">Active Sub-Circuits:</span>
+            <div id="inspector-subcomponents" class="space-y-1"></div>
           </div>
         </div>
       </section>
@@ -1362,120 +1435,629 @@
     }
 
     // ==========================================
-    // Three.js 3D View Initializer
+    // Three.js 3D Visualizer: Electric Matrix & LOD Internals
     // ==========================================
     let threeInitialized = false;
+    let visualizerSimulatedFailure = false;
+    let electricBurstFactor = 1.0;
+    let targetCameraPos = null;
+    let targetControlsLookAt = null;
+
     function init3DEcosystem() {
       if (threeInitialized) return;
       const canvas = document.getElementById('ecosystem-canvas');
       if (!canvas) return;
       threeInitialized = true;
 
+      // Scene & Fog
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0e0e10);
-      scene.fog = new THREE.FogExp2(0x0e0e10, 0.015);
+      scene.background = new THREE.Color(0x0a0a0d);
+      scene.fog = new THREE.FogExp2(0x0a0a0d, 0.012);
 
+      // Camera & Renderer
       const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-      camera.position.set(0, 16, 26);
+      camera.position.set(0, 24, 34);
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
       renderer.setSize(canvas.clientWidth, canvas.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
+      controls.dampingFactor = 0.06;
+      controls.maxDistance = 80;
+      controls.minDistance = 3.5;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05; // don't go too far below plane
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
-      const pointLight = new THREE.PointLight(0xf59e0b, 2.5, 60);
-      pointLight.position.set(0, 8, 0);
-      scene.add(pointLight);
+      const centerLight = new THREE.PointLight(0x38bdf8, 3.0, 70);
+      centerLight.position.set(0, 12, 0);
+      scene.add(centerLight);
 
-      // Starfield
+      const amberLight = new THREE.PointLight(0xf59e0b, 2.0, 50);
+      amberLight.position.set(-10, 8, -5);
+      scene.add(amberLight);
+
+      const emeraldLight = new THREE.PointLight(0x10b981, 2.5, 60);
+      emeraldLight.position.set(10, 8, 5);
+      scene.add(emeraldLight);
+
+      // GitHub Commit Grid Matrix Floor
+      const grid = new THREE.GridHelper(90, 45, 0x27272a, 0x141416);
+      grid.position.y = -4;
+      scene.add(grid);
+
+      // Subtle Cyber Starfield
       const starGeo = new THREE.BufferGeometry();
-      const starPos = new Float32Array(400 * 3);
-      for(let i=0; i<1200; i++) starPos[i] = (Math.random() - 0.5) * 100;
+      const starPos = new Float32Array(500 * 3);
+      for (let i = 0; i < 1500; i++) starPos[i] = (Math.random() - 0.5) * 160;
       starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-      const starMat = new THREE.PointsMaterial({ color: 0x52525b, size: 0.5 });
+      const starMat = new THREE.PointsMaterial({ color: 0x52525b, size: 0.6, transparent: true, opacity: 0.7 });
       const starField = new THREE.Points(starGeo, starMat);
       scene.add(starField);
 
-      // Nodes
-      const nodes = [
-        { id: 'ingress', name: 'Ingress Point', pos: [0, 12, 0], color: 0x38bdf8, size: 1.5 },
-        { id: 'security', name: 'WAF & Shield', pos: [0, 7, 0], color: 0x06b6d4, size: 1.3 },
-        { id: 'proj_mobile', name: 'Mobile App', pos: [-9, 2, -2], color: 0xf59e0b, size: 1.4 },
-        { id: 'proj_web', name: 'Web Client', pos: [0, 2, 4], color: 0xf59e0b, size: 1.4 },
-        { id: 'proj_bot', name: 'Bot API', pos: [9, 2, -2], color: 0xf59e0b, size: 1.4 },
-        { id: 'mail_engine', name: 'Mail Engine', pos: [-5, -4, 2], color: 0x10b981, size: 1.3 },
-        { id: 'postfix', name: 'Postfix (25)', pos: [-11, -4, 4], color: 0x10b981, size: 1.1 },
-        { id: 'ingest', name: 'Ingest (2525)', pos: [-8, -8, 2], color: 0x10b981, size: 1.1 },
-        { id: 'fcm_push', name: 'FCM (4001)', pos: [-3, -8, -3], color: 0x10b981, size: 1.1 },
-        { id: 'redis_state', name: 'Redis (6379)', pos: [5, -4, 2], color: 0x3b82f6, size: 1.2 },
-        { id: 'sqlite_db', name: 'SQLite DB', pos: [9, -8, 0], color: 0x3b82f6, size: 1.1 },
-        // Locked Roadmap Nodes
-        { id: 'pgp', name: '🔒 PGP E2E', pos: [-11, -11, 0], color: 0x71717a, size: 1.0, locked: true },
-        { id: 'spam_ai', name: '🔒 AI Filter', pos: [0, -11, 4], color: 0x71717a, size: 1.0, locked: true },
-        { id: 'webhooks', name: '🔒 Webhooks', pos: [11, -11, -2], color: 0x71717a, size: 1.0, locked: true }
-      ];
+      // Helper: Create Text Sprite for Node Labels & Latencies
+      function makeCanvasSprite(text, bgColor = 'rgba(20,20,24,0.85)', textColor = '#ffffff', borderColor = 'rgba(255,255,255,0.15)', fontSize = 20) {
+        const c = document.createElement('canvas');
+        c.width = 256;
+        c.height = 72;
+        const ctx = c.getContext('2d');
 
-      const links = [
-        ['ingress', 'security'],
-        ['security', 'proj_mobile'],
-        ['security', 'proj_web'],
-        ['security', 'proj_bot'],
-        ['proj_mobile', 'mail_engine'],
-        ['proj_mobile', 'fcm_push'],
-        ['proj_web', 'mail_engine'],
-        ['proj_bot', 'mail_engine'],
-        ['mail_engine', 'postfix'],
-        ['postfix', 'ingest'],
-        ['ingest', 'mail_engine'],
-        ['mail_engine', 'redis_state'],
-        ['mail_engine', 'sqlite_db'],
-        ['mail_engine', 'pgp'],
-        ['ingest', 'spam_ai'],
-        ['mail_engine', 'webhooks']
+        // Draw rounded pill
+        ctx.fillStyle = bgColor;
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 3;
+        const r = 16, x = 6, y = 6, w = 244, h = 60;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Text
+        ctx.font = `bold ${fontSize}px "Fira Code", monospace`;
+        ctx.fillStyle = textColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 128, 36);
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.minFilter = THREE.LinearFilter;
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+        const sp = new THREE.Sprite(mat);
+        sp.scale.set(3.2, 0.9, 1);
+        return { sprite: sp, canvas: c, ctx: ctx, texture: tex };
+      }
+
+      // ==========================================
+      // Macro Nodes Definition (GitHub Commit Style)
+      // ==========================================
+      const macroNodes = [
+        // Tier 0: Clients / Consumers
+        { id: 'mobile', name: 'Mobile App', sub: 'Flutter Client', pos: [-16, 2, -6], color: 0xf59e0b, port: '443 SSL', status: 'Live Active', latency: '34ms', hasInternals: true },
+        { id: 'web', name: 'Web Client', sub: 'Browser SPA', pos: [-16, 2, 0], color: 0xf59e0b, port: '443 SSL', status: 'Live Active', latency: '21ms', hasInternals: false },
+        { id: 'bot', name: 'Bot API', sub: 'Automations', pos: [-16, 2, 6], color: 0xf59e0b, port: '443 SSL', status: 'Live Active', latency: '18ms', hasInternals: false },
+
+        // Tier 1: Gateway & Shield
+        { id: 'nginx', name: 'Nginx Proxy', sub: 'TLS / Reverse Proxy', pos: [-8, 3, 0], color: 0x38bdf8, port: '80 / 443', status: 'Optimal', latency: '0.4ms', hasInternals: false },
+        { id: 'waf', name: 'WAF & POW', sub: 'Cryptographic Shield', pos: [-3, 4, 0], color: 0x06b6d4, port: '8080 Filter', status: 'Guarded', latency: '0.3ms', hasInternals: false },
+
+        // Tier 2: Core Dispatch & Ingest
+        { id: 'hub', name: 'MailMesh Hub', sub: 'Axum API Engine', pos: [3, 3, -4], color: 0x10b981, port: '127.0.0.1:8080', status: 'Healthy', latency: '0.7ms', hasInternals: true },
+        { id: 'postfix', name: 'Postfix MTA', sub: 'Port 25 MX Relay', pos: [0, 2, 7], color: 0x10b981, port: '0.0.0.0:25', status: 'Relaying', latency: '0.9ms', hasInternals: false },
+        { id: 'ingest', name: 'MailMesh Ingest', sub: 'SMTP Ingest 5000 Cmds', pos: [6, 2, 7], color: 0x10b981, port: '127.0.0.1:2525', status: 'Listening', latency: '1.1ms', hasInternals: true },
+
+        // Tier 3: State & Workers
+        { id: 'redis', name: 'Redis Core', sub: 'In-Memory State', pos: [13, 3, -5], color: 0x3b82f6, port: '127.0.0.1:6379', status: 'Ready (0 Err)', latency: '0.4ms', hasInternals: true },
+        { id: 'sqlite', name: 'Control SQLite', sub: 'Audit / Workspace DB', pos: [17, 2, -1], color: 0x3b82f6, port: 'Runtime Disk', status: 'Synced', latency: '0.9ms', hasInternals: false },
+        { id: 'fcm', name: 'FCM Worker', sub: 'Push Queue Daemon', pos: [13, 2, 5], color: 0x10b981, port: '127.0.0.1:4001', status: 'Online', latency: '28ms', hasInternals: false },
+
+        // Tier 4: Locked Tech Roadmap
+        { id: 'pgp', name: '🔒 PGP E2E', sub: 'Hardware Keyring', pos: [18, 0, 7], color: 0x52525b, port: 'Roadmap', status: 'Locked', latency: '--', locked: true },
+        { id: 'spam_ai', name: '🔒 Spam AI', sub: 'Neural Filter', pos: [11, 0, 11], color: 0x52525b, port: 'Roadmap', status: 'Locked', latency: '--', locked: true }
       ];
 
       const nodeObjects = {};
-      nodes.forEach(n => {
-        const geo = new THREE.SphereGeometry(n.size, 16, 16);
-        const mat = new THREE.MeshStandardMaterial({
+      const nodeLabels = {};
+      const raycastTargets = [];
+
+      macroNodes.forEach(n => {
+        const group = new THREE.Group();
+        group.position.set(...n.pos);
+
+        // Ground commit base pillar
+        const baseHeight = n.pos[1] - (-4);
+        const pillarGeo = new THREE.CylinderGeometry(0.08, 0.08, baseHeight, 8);
+        const pillarMat = new THREE.MeshBasicMaterial({ color: 0x27272a, transparent: true, opacity: 0.6 });
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.y = -baseHeight / 2;
+        group.add(pillar);
+
+        // Ground anchor dot
+        const dotGeo = new THREE.CircleGeometry(0.35, 12);
+        dotGeo.rotateX(-Math.PI / 2);
+        const dotMat = new THREE.MeshBasicMaterial({ color: n.color, transparent: true, opacity: 0.4 });
+        const dot = new THREE.Mesh(dotGeo, dotMat);
+        dot.position.y = -baseHeight + 0.02;
+        group.add(dot);
+
+        // Core Commit Cylinder / Octahedron
+        const coreGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.7, 16);
+        const coreMat = new THREE.MeshStandardMaterial({
           color: n.color,
-          roughness: 0.3,
-          wireframe: n.locked,
           emissive: n.color,
-          emissiveIntensity: n.locked ? 0.05 : 0.25
+          emissiveIntensity: n.locked ? 0.05 : 0.4,
+          roughness: 0.25,
+          metalness: 0.6
         });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.set(...n.pos);
-        scene.add(mesh);
-        nodeObjects[n.id] = mesh;
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        coreMesh.userData = { nodeId: n.id, data: n, isMacro: true };
+        group.add(coreMesh);
+        raycastTargets.push(coreMesh);
+
+        // Orbiting glowing ring
+        if (!n.locked) {
+          const ringGeo = new THREE.TorusGeometry(1.7, 0.03, 8, 32);
+          const ringMat = new THREE.MeshBasicMaterial({ color: n.color, transparent: true, opacity: 0.65 });
+          const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+          ringMesh.rotation.x = Math.PI / 3;
+          group.add(ringMesh);
+          group.userData.ring = ringMesh;
+        }
+
+        // Floating Title Sprite
+        const spObj = makeCanvasSprite(n.name, 'rgba(15,15,18,0.85)', n.locked ? '#71717a' : '#ffffff', n.locked ? '#3f3f46' : '#f59e0b', 22);
+        spObj.sprite.position.set(0, 1.8, 0);
+        group.add(spObj.sprite);
+
+        scene.add(group);
+        nodeObjects[n.id] = { group, coreMesh, data: n };
       });
 
-      links.forEach(([fromId, toId]) => {
-        const o1 = nodeObjects[fromId];
-        const o2 = nodeObjects[toId];
+      // ==========================================
+      // Macro Electric Connections Definition
+      // ==========================================
+      const macroConnectionsData = [
+        { from: 'mobile', to: 'nginx', latency: '34ms', status: 'ok' },
+        { from: 'web', to: 'nginx', latency: '21ms', status: 'ok' },
+        { from: 'bot', to: 'nginx', latency: '18ms', status: 'ok' },
+        { from: 'nginx', to: 'waf', latency: '0.4ms', status: 'ok' },
+        { from: 'waf', to: 'hub', latency: '0.3ms', status: 'ok' },
+        { from: 'postfix', to: 'ingest', latency: '0.8ms', status: 'ok' },
+        { from: 'ingest', to: 'hub', latency: '1.1ms', status: 'ok', id: 'ingest_to_hub' },
+        { from: 'hub', to: 'redis', latency: '0.4ms', status: 'ok' },
+        { from: 'hub', to: 'sqlite', latency: '0.9ms', status: 'ok' },
+        { from: 'hub', to: 'fcm', latency: '28ms', status: 'ok' },
+        { from: 'ingest', to: 'spam_ai', latency: '--', status: 'locked', locked: true },
+        { from: 'hub', to: 'pgp', latency: '--', status: 'locked', locked: true }
+      ];
+
+      // ==========================================
+      // Internal Sub-Nodes (Zoom LOD Layer 2)
+      // ==========================================
+      const internalDefinitions = {
+        hub: {
+          subNodes: [
+            { id: 'hub_router', name: 'Route Dispatcher', pos: [1.2, 3.8, -4.2], color: 0x10b981, desc: 'Axum multi-tenant route multiplexer' },
+            { id: 'hub_pow', name: 'POW Shield Core', pos: [2.8, 5.2, -5.4], color: 0x06b6d4, desc: 'Adaptive SHA-256 puzzle verification' },
+            { id: 'hub_inbox', name: 'Inboxes Store', pos: [4.6, 3.0, -3.2], color: 0x10b981, desc: 'Active mailboxes and TTL expiration ring' },
+            { id: 'hub_sse', name: 'Realtime SSE Bus', pos: [3.0, 1.2, -2.8], color: 0x38bdf8, desc: 'Live event streaming to connected web apps' },
+            { id: 'hub_token', name: 'Session Attestor', pos: [1.4, 1.8, -5.2], color: 0xf59e0b, desc: 'Cryptographic install tokens and device sync' }
+          ],
+          links: [
+            { from: 'hub_router', to: 'hub_pow', latency: '0.08ms' },
+            { from: 'hub_router', to: 'hub_inbox', latency: '0.14ms' },
+            { from: 'hub_inbox', to: 'hub_sse', latency: '0.05ms' },
+            { from: 'hub_router', to: 'hub_token', latency: '0.11ms' }
+          ]
+        },
+        ingest: {
+          subNodes: [
+            { id: 'ing_socket', name: 'Postfix Socket (2525)', pos: [4.8, 3.2, 5.6], color: 0x10b981, desc: 'High-burst unix socket stream listener' },
+            { id: 'ing_proto', name: 'SMTP State Machine', pos: [6.2, 4.2, 7.8], color: 0x10b981, desc: '5000 max cmds/session handler' },
+            { id: 'ing_mime', name: 'MIME Parser Engine', pos: [7.8, 2.4, 5.8], color: 0x38bdf8, desc: 'RFC-822 multi-part body parser' },
+            { id: 'ing_att', name: 'Attachment Storage', pos: [5.6, 0.8, 7.4], color: 0x3b82f6, desc: 'Deduplicated attachment disk cache' }
+          ],
+          links: [
+            { from: 'ing_socket', to: 'ing_proto', latency: '0.06ms' },
+            { from: 'ing_proto', to: 'ing_mime', latency: '0.22ms' },
+            { from: 'ing_mime', to: 'ing_att', latency: '0.35ms' }
+          ]
+        },
+        redis: {
+          subNodes: [
+            { id: 'red_cache', name: 'Key/Val Cache', pos: [11.4, 3.8, -4.2], color: 0x3b82f6, desc: 'Sub-millisecond session lookup' },
+            { id: 'red_ttl', name: 'TTL Eviction Ring', pos: [14.4, 2.2, -4.0], color: 0x38bdf8, desc: 'Automatic timer cleanup for expired inboxes' },
+            { id: 'red_pubsub', name: 'Pub/Sub Channel Bus', pos: [12.8, 1.0, -6.2], color: 0x10b981, desc: 'Live event fan-out across cluster' }
+          ],
+          links: [
+            { from: 'red_cache', to: 'red_ttl', latency: '0.04ms' },
+            { from: 'red_cache', to: 'red_pubsub', latency: '0.07ms' }
+          ]
+        },
+        mobile: {
+          subNodes: [
+            { id: 'mob_session', name: 'Session Token', pos: [-17.6, 3.2, -5.2], color: 0xf59e0b, desc: 'Install-bound HMAC clearance' },
+            { id: 'mob_cache', name: 'Local Cache DB', pos: [-14.4, 2.6, -7.2], color: 0x10b981, desc: 'SQLite persistence on device' },
+            { id: 'mob_fcm', name: 'FCM Push Handler', pos: [-16.2, 0.8, -4.6], color: 0x38bdf8, desc: 'Background message wakeups' },
+            { id: 'mob_integrity', name: 'Play Integrity', pos: [-15.2, 4.4, -7.0], color: 0x06b6d4, desc: 'Google Play hardware verification' }
+          ],
+          links: [
+            { from: 'mob_session', to: 'mob_cache', latency: '1.2ms' },
+            { from: 'mob_session', to: 'mob_integrity', latency: '12ms' },
+            { from: 'mob_fcm', to: 'mob_cache', latency: '0.8ms' }
+          ]
+        }
+      };
+
+      const internalsGroup = new THREE.Group();
+      scene.add(internalsGroup);
+      const internalSubObjects = {};
+
+      Object.entries(internalDefinitions).forEach(([macroKey, def]) => {
+        // Subtle boundary sphere for the cluster
+        const parentPos = macroNodes.find(m => m.id === macroKey).pos;
+        const bGeo = new THREE.SphereGeometry(3.6, 16, 16);
+        const bMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.1 });
+        const bMesh = new THREE.Mesh(bGeo, bMat);
+        bMesh.position.set(...parentPos);
+        internalsGroup.add(bMesh);
+
+        def.subNodes.forEach(sn => {
+          const sGroup = new THREE.Group();
+          sGroup.position.set(...sn.pos);
+
+          const sGeo = new THREE.IcosahedronGeometry(0.5, 1);
+          const sMat = new THREE.MeshStandardMaterial({
+            color: sn.color,
+            emissive: sn.color,
+            emissiveIntensity: 0.5,
+            roughness: 0.3
+          });
+          const sMesh = new THREE.Mesh(sGeo, sMat);
+          sMesh.userData = { nodeId: sn.id, data: sn, isInternal: true, parentMacro: macroKey };
+          sGroup.add(sMesh);
+          raycastTargets.push(sMesh);
+
+          const spObj = makeCanvasSprite(sn.name, 'rgba(10,10,14,0.9)', '#ffffff', 'rgba(56,189,248,0.5)', 20);
+          spObj.sprite.position.set(0, 0.9, 0);
+          spObj.sprite.scale.set(2.4, 0.7, 1);
+          sGroup.add(spObj.sprite);
+
+          internalsGroup.add(sGroup);
+          internalSubObjects[sn.id] = { group: sGroup, mesh: sMesh, data: sn, pos: new THREE.Vector3(...sn.pos) };
+        });
+      });
+
+      // ==========================================
+      // Dynamic Electricity Arc Generator
+      // ==========================================
+      class ElectricArc {
+        constructor(startVec, endVec, options = {}) {
+          this.start = startVec;
+          this.end = endVec;
+          this.isFailed = options.isFailed || false;
+          this.isLocked = options.isLocked || false;
+          this.segments = 16;
+          this.jitterAmp = options.isFailed ? 0.6 : 0.22;
+          this.latencyText = options.latency || '0.7ms';
+          this.isInternal = options.isInternal || false;
+
+          // 1. Static base guide line
+          const basePts = [this.start, this.end];
+          const baseGeo = new THREE.BufferGeometry().setFromPoints(basePts);
+          const baseMat = new THREE.LineBasicMaterial({
+            color: this.isLocked ? 0x3f3f46 : (this.isFailed ? 0xef4444 : 0x06b6d4),
+            transparent: true,
+            opacity: this.isLocked ? 0.2 : (this.isFailed ? 0.45 : 0.25)
+          });
+          this.baseLine = new THREE.Line(baseGeo, baseMat);
+
+          // 2. Dynamic jagged lightning line
+          this.dynamicPts = [];
+          for (let i = 0; i <= this.segments; i++) {
+            this.dynamicPts.push(new THREE.Vector3().lerpVectors(this.start, this.end, i / this.segments));
+          }
+          this.lightningGeo = new THREE.BufferGeometry().setFromPoints(this.dynamicPts);
+          this.lightningMat = new THREE.LineBasicMaterial({
+            color: this.isFailed ? 0xef4444 : (this.isLocked ? 0x52525b : 0x38bdf8),
+            transparent: true,
+            opacity: this.isLocked ? 0.2 : 0.85,
+            linewidth: 2
+          });
+          this.lightningLine = new THREE.Line(this.lightningGeo, this.lightningMat);
+
+          // 3. Traveling electric plasma particle
+          const packetGeo = new THREE.SphereGeometry(this.isInternal ? 0.15 : 0.28, 8, 8);
+          const packetMat = new THREE.MeshBasicMaterial({
+            color: this.isFailed ? 0xff2222 : 0xec4899,
+            transparent: true,
+            opacity: this.isLocked ? 0 : 0.95
+          });
+          this.packet = new THREE.Mesh(packetGeo, packetMat);
+          this.packetProgress = Math.random();
+          this.packetSpeed = (this.isInternal ? 0.018 : 0.009) * (0.8 + Math.random() * 0.5);
+
+          // 4. Midpoint Latency Billboard Sprite
+          const mid = new THREE.Vector3().lerpVectors(this.start, this.end, 0.5);
+          mid.y += 0.45;
+          const latColor = this.isFailed ? '#ef4444' : (parseFloat(this.latencyText) > 25 ? '#f59e0b' : '#10b981');
+          const latBorder = this.isFailed ? 'rgba(239,68,68,0.6)' : 'rgba(16,185,129,0.4)';
+          this.latSpriteObj = makeCanvasSprite(this.latencyText, 'rgba(10,10,12,0.92)', latColor, latBorder, 18);
+          this.latSpriteObj.sprite.position.copy(mid);
+          this.latSpriteObj.sprite.scale.set(this.isInternal ? 1.6 : 2.2, this.isInternal ? 0.5 : 0.65, 1);
+        }
+
+        addTo(parent) {
+          parent.add(this.baseLine);
+          parent.add(this.lightningLine);
+          parent.add(this.packet);
+          parent.add(this.latSpriteObj.sprite);
+        }
+
+        update(time, burstMultiplier = 1.0) {
+          if (this.isLocked) return;
+
+          // Jitter the lightning segments
+          const posAttr = this.lightningGeo.attributes.position;
+          const dir = new THREE.Vector3().subVectors(this.end, this.start).normalize();
+          const up = new THREE.Vector3(0, 1, 0);
+          const normal = new THREE.Vector3().crossVectors(dir, up).normalize();
+          const amp = this.jitterAmp * burstMultiplier * (this.isFailed ? 2.5 : 1.0);
+
+          for (let i = 1; i < this.segments; i++) {
+            const t = i / this.segments;
+            const basePos = new THREE.Vector3().lerpVectors(this.start, this.end, t);
+            const freq = time * (this.isFailed ? 45 : 25) + i * 2.2;
+            const noise = (Math.sin(freq) + Math.cos(freq * 1.5)) * amp * Math.sin(t * Math.PI);
+            basePos.addScaledVector(normal, noise);
+            basePos.y += Math.sin(freq * 1.2) * amp * 0.5;
+            posAttr.setXYZ(i, basePos.x, basePos.y, basePos.z);
+          }
+          posAttr.needsUpdate = true;
+
+          // Advance plasma packet
+          this.packetProgress += this.packetSpeed * burstMultiplier;
+          if (this.packetProgress > 1.0) this.packetProgress = 0.0;
+          this.packet.position.lerpVectors(this.start, this.end, this.packetProgress);
+
+          // If failed, flicker the line
+          if (this.isFailed) {
+            this.lightningMat.opacity = Math.random() > 0.3 ? 0.95 : 0.2;
+          }
+        }
+
+        setFailure(failed, newLatency = 'TIMEOUT') {
+          this.isFailed = failed;
+          this.latencyText = newLatency;
+          const latColor = failed ? '#ef4444' : '#10b981';
+          const latBorder = failed ? 'rgba(239,68,68,0.8)' : 'rgba(16,185,129,0.4)';
+          this.lightningMat.color.setHex(failed ? 0xef4444 : 0x38bdf8);
+          this.baseLine.material.color.setHex(failed ? 0xef4444 : 0x06b6d4);
+          this.packet.material.color.setHex(failed ? 0xff2222 : 0xec4899);
+
+          // Redraw latency text
+          const ctx = this.latSpriteObj.ctx;
+          ctx.clearRect(0, 0, 256, 72);
+          ctx.fillStyle = 'rgba(10,10,12,0.92)';
+          ctx.strokeStyle = latBorder;
+          ctx.lineWidth = 3;
+          ctx.strokeRect(6, 6, 244, 60);
+          ctx.fillRect(6, 6, 244, 60);
+          ctx.font = 'bold 20px "Fira Code", monospace';
+          ctx.fillStyle = latColor;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(newLatency, 128, 36);
+          this.latSpriteObj.texture.needsUpdate = true;
+        }
+      }
+
+      // Instantiate Macro Connections
+      const macroArcs = [];
+      macroConnectionsData.forEach(c => {
+        const o1 = nodeObjects[c.from];
+        const o2 = nodeObjects[c.to];
         if (!o1 || !o2) return;
-        const curve = new THREE.LineCurve3(o1.position, o2.position);
-        const points = curve.getPoints(12);
-        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.35 });
-        scene.add(new THREE.Line(lineGeo, lineMat));
+        const arc = new ElectricArc(o1.group.position, o2.group.position, {
+          isFailed: false,
+          isLocked: c.locked,
+          latency: c.latency,
+          isInternal: false
+        });
+        arc.arcId = c.id || `${c.from}_${c.to}`;
+        arc.addTo(scene);
+        macroArcs.push(arc);
       });
 
+      // Instantiate Internal Micro Connections
+      const internalArcs = [];
+      Object.values(internalDefinitions).forEach(def => {
+        def.links.forEach(l => {
+          const so1 = internalSubObjects[l.from];
+          const so2 = internalSubObjects[l.to];
+          if (!so1 || !so2) return;
+          const arc = new ElectricArc(so1.pos, so2.pos, {
+            isFailed: false,
+            isLocked: false,
+            latency: l.latency,
+            isInternal: true
+          });
+          arc.addTo(internalsGroup);
+          internalArcs.push(arc);
+        });
+      });
+
+      // ==========================================
+      // Interactive Click & Raycasting
+      // ==========================================
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      function onPointerDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(raycastTargets);
+        if (hits.length > 0) {
+          const hit = hits[0].object;
+          showNodeInspector(hit.userData);
+          focusCameraOnPos(hit.parent.position, hit.userData.isInternal ? 7 : 12);
+        }
+      }
+      canvas.addEventListener('pointerdown', onPointerDown);
+
+      function showNodeInspector(nodeMeta) {
+        const drawer = document.getElementById('visualizer-inspector');
+        if (!drawer) return;
+        drawer.classList.remove('hidden');
+
+        const data = nodeMeta.data;
+        document.getElementById('inspector-title').textContent = data.name;
+        document.getElementById('inspector-name').textContent = data.sub || data.desc || data.name;
+        document.getElementById('inspector-port').textContent = data.port || 'Internal Socket';
+        document.getElementById('inspector-status').textContent = data.status || 'Active OK';
+        document.getElementById('inspector-latency').textContent = data.latency || '< 0.5ms';
+
+        const dot = document.getElementById('inspector-icon-dot');
+        dot.className = `size-2 rounded-full ${data.locked ? 'bg-gray-500' : 'bg-emerald-400'}`;
+
+        const internalsBox = document.getElementById('inspector-subcomponents');
+        internalsBox.innerHTML = '';
+        if (nodeMeta.hasInternals && internalDefinitions[data.id]) {
+          internalDefinitions[data.id].subNodes.forEach(sn => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between text-[11px] font-mono border-b border-white/[0.04] py-0.5 last:border-b-0';
+            row.innerHTML = `<span class="text-white">● ${sn.name}</span><span class="text-emerald-400">0.1ms</span>`;
+            internalsBox.appendChild(row);
+          });
+        } else if (nodeMeta.isInternal) {
+          const row = document.createElement('div');
+          row.className = 'text-[11px] font-mono text-cyan-300';
+          row.textContent = `Parent Module: ${nodeMeta.parentMacro.toUpperCase()}`;
+          internalsBox.appendChild(row);
+        } else {
+          const row = document.createElement('div');
+          row.className = 'text-[11px] font-mono text-fg-faint';
+          row.textContent = 'Monolithic Single Component';
+          internalsBox.appendChild(row);
+        }
+      }
+
+      function focusCameraOnPos(pos, distance = 14) {
+        targetControlsLookAt = pos.clone();
+        targetCameraPos = pos.clone().add(new THREE.Vector3(0, distance * 0.6, distance));
+      }
+
+      // Global window helpers for HUD buttons
+      window.focusVisualizerNode = function(id) {
+        if (id === 'overview') {
+          targetControlsLookAt = new THREE.Vector3(0, 2, 0);
+          targetCameraPos = new THREE.Vector3(0, 24, 34);
+        } else if (nodeObjects[id]) {
+          focusCameraOnPos(nodeObjects[id].group.position, 10);
+          showNodeInspector(nodeObjects[id].coreMesh.userData);
+        }
+      };
+
+      window.triggerElectricBurst = function() {
+        electricBurstFactor = 3.5;
+        showToast('⚡ High-voltage electric traffic burst simulated', 'success');
+        setTimeout(() => electricBurstFactor = 1.0, 1800);
+      };
+
+      window.toggleSimulatedFailure = function() {
+        visualizerSimulatedFailure = !visualizerSimulatedFailure;
+        const ingestHubArc = macroArcs.find(a => a.arcId === 'ingest_to_hub');
+        const hudStatus = document.getElementById('hud-system-status');
+        const btnFail = document.getElementById('btn-toggle-failure');
+
+        if (visualizerSimulatedFailure) {
+          if (ingestHubArc) ingestHubArc.setFailure(true, 'TIMEOUT (142ms)');
+          if (hudStatus) {
+            hudStatus.innerHTML = `<span class="size-1.5 rounded-full bg-rose-500 animate-ping"></span><span class="text-rose-400">FAULT: INGEST RELAY</span>`;
+          }
+          if (btnFail) btnFail.innerHTML = `<i data-lucide="check" class="size-3.5"></i><span>Restore Health</span>`;
+          showToast('⚠️ Simulated connection fault: Ingest ↔ Hub API short-circuit', 'error');
+        } else {
+          if (ingestHubArc) ingestHubArc.setFailure(false, '1.1ms');
+          if (hudStatus) {
+            hudStatus.innerHTML = `<span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-emerald-400">OPERATIONAL</span>`;
+          }
+          if (btnFail) btnFail.innerHTML = `<i data-lucide="alert-triangle" class="size-3.5"></i><span>Simulate Failure</span>`;
+          showToast('✅ All circuits restored to 100% operational condition', 'success');
+        }
+        lucide.createIcons();
+      };
+
+      // Resize Listener
       window.addEventListener('resize', () => {
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(canvas.clientWidth, canvas.clientHeight);
       });
 
+      // ==========================================
+      // Animation Loop
+      // ==========================================
+      const clock = new THREE.Clock();
       function animate() {
         requestAnimationFrame(animate);
-        starField.rotation.y += 0.0002;
+        const elapsedTime = clock.getElapsedTime();
+
+        // Rotate Starfield and Node Halos
+        starField.rotation.y += 0.0003;
+        Object.values(nodeObjects).forEach(n => {
+          if (n.group.userData.ring) {
+            n.group.userData.ring.rotation.z += 0.015;
+          }
+        });
+
+        // Smooth camera tweening when focused
+        if (targetCameraPos && targetControlsLookAt) {
+          camera.position.lerp(targetCameraPos, 0.07);
+          controls.target.lerp(targetControlsLookAt, 0.07);
+          if (camera.position.distanceTo(targetCameraPos) < 0.2) {
+            targetCameraPos = null;
+            targetControlsLookAt = null;
+          }
+        }
+
+        // Distance / Zoom LOD Calculation
+        const dist = camera.position.distanceTo(controls.target);
+        const hudLod = document.getElementById('hud-zoom-lod');
+        if (dist > 22) {
+          if (hudLod) hudLod.textContent = 'Macro Overview';
+          internalsGroup.visible = false;
+        } else if (dist <= 22 && dist > 14) {
+          if (hudLod) hudLod.textContent = 'Sub-Cluster (LOD 1)';
+          internalsGroup.visible = true;
+          internalsGroup.scale.setScalar(THREE.MathUtils.lerp(internalsGroup.scale.x, 0.6, 0.1));
+        } else {
+          if (hudLod) hudLod.textContent = 'Deep Internal (LOD 2)';
+          internalsGroup.visible = true;
+          internalsGroup.scale.setScalar(THREE.MathUtils.lerp(internalsGroup.scale.x, 1.0, 0.1));
+        }
+
+        // Animate all electricity arcs & plasma pulses
+        macroArcs.forEach(arc => arc.update(elapsedTime, electricBurstFactor));
+        if (internalsGroup.visible) {
+          internalArcs.forEach(arc => arc.update(elapsedTime, electricBurstFactor));
+        }
+
         controls.update();
         renderer.render(scene, camera);
       }
