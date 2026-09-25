@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Projects | Coolify for MailMesh</title>
+  <title>MailMesh Control</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Alpine.js -->
@@ -224,10 +224,10 @@
     <div class="flex items-center gap-2 h-full shrink-0 hairline-r transition-[width] duration-200 px-4"
          :class="sidebarCollapsed ? 'w-16 justify-center px-0' : 'w-56 px-4'">
       <a href="javascript:void(0)" @click="switchView('projects')" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        <img src="/panel/coolify-logo.svg" alt="Coolify" class="size-5 shrink-0" onerror="this.src='https://coolify.io/favicon.ico'" />
-        <span x-show="!sidebarCollapsed" class="text-[14px] font-semibold tracking-tight text-white">Coolify</span>
+        <img src="/panel/mailmesh-logo.svg" alt="MailMesh" class="size-5 shrink-0" />
+        <span x-show="!sidebarCollapsed" class="text-[14px] font-semibold tracking-tight text-white">MailMesh</span>
       </a>
-      <span x-show="!sidebarCollapsed" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.05] border border-white/[0.08] text-fg-faint">v4.0</span>
+      <span x-show="!sidebarCollapsed" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.05] border border-white/[0.08] text-fg-faint">v3.7</span>
     </div>
 
     <!-- Center: Breadcrumbs + Context -->
